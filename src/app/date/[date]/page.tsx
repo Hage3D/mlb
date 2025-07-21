@@ -64,14 +64,15 @@ function getAdjacentDates(currentDate: string) {
   };
 }
 
-export default async function DatePage({ params }: { params: { date: string } }) {
-  const dateData = await getMlbDataForDate(params.date);
-  const { prevDate, nextDate } = getAdjacentDates(params.date);
+export default async function DatePage({ params }: { params: Promise<{ date: string }> }) {
+  const { date } = await params;
+  const dateData = await getMlbDataForDate(date);
+  const { prevDate, nextDate } = getAdjacentDates(date);
 
   if (!dateData || !dateData.games || dateData.games.length === 0) {
     // Still show navigation even if no games
     // Convert US date to JST date for display (add 1 day for most evening games)
-    const usDateObj = new Date(params.date);
+    const usDateObj = new Date(date);
     const jstDateObj = new Date(usDateObj.getTime() + (24 * 60 * 60 * 1000)); // Add 1 day for JST display
     const dateString = `${jstDateObj.getFullYear()}.${String(jstDateObj.getMonth() + 1).padStart(2, '0')}.${String(jstDateObj.getDate()).padStart(2, '0')} ${jstDateObj.toLocaleDateString('en-US', { weekday: 'short' })}`;
 
