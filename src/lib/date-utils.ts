@@ -3,12 +3,16 @@
  * Handles conversion between US game dates and JST display dates
  */
 
+import { TIME_FORMAT } from './constants';
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
 /**
  * Converts JST date to US date (typically previous day)
  * Used for fetching games that correspond to a JST date
  */
 export function jstDateToUsDate(jstDate: Date): string {
-  const usDate = new Date(jstDate.getTime() - (24 * 60 * 60 * 1000));
+  const usDate = new Date(jstDate.getTime() - MS_PER_DAY);
   return usDate.toISOString().split('T')[0];
 }
 
@@ -18,9 +22,9 @@ export function jstDateToUsDate(jstDate: Date): string {
  */
 export function usDateToJstDisplayDate(usDateString: string): string {
   const usDate = new Date(usDateString);
-  const jstDate = new Date(usDate.getTime() + (24 * 60 * 60 * 1000));
+  const jstDate = new Date(usDate.getTime() + MS_PER_DAY);
   
-  return `${jstDate.getFullYear()}.${String(jstDate.getMonth() + 1).padStart(2, '0')}.${String(jstDate.getDate()).padStart(2, '0')} ${jstDate.toLocaleDateString('en-US', { weekday: 'short' })}`;
+  return `${jstDate.getFullYear()}.${String(jstDate.getMonth() + 1).padStart(2, '0')}.${String(jstDate.getDate()).padStart(2, '0')} ${jstDate.toLocaleDateString(TIME_FORMAT.US_LOCALE, { weekday: 'short' })}`;
 }
 
 /**
@@ -45,8 +49,8 @@ export function getAdjacentDates(currentDate: string): { prevDate: string; nextD
  */
 export function formatGameTimeToJst(gameDate: string): string {
   const date = new Date(gameDate);
-  return date.toLocaleTimeString('ja-JP', { 
-    timeZone: 'Asia/Tokyo',
+  return date.toLocaleTimeString(TIME_FORMAT.JST_LOCALE, { 
+    timeZone: TIME_FORMAT.TIME_ZONE_JST,
     hour: '2-digit', 
     minute: '2-digit',
     hour12: false 

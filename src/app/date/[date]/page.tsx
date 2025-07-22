@@ -3,7 +3,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getJapanesePlayersTeams } from '@/lib/japanese-players';
 import { getMlbDataForDate } from '@/lib/mlb-api';
-import { formatGameData, sortGames } from '@/lib/game-utils';
+import { formatGameData } from '@/lib/game-utils';
+import { sortGames } from '@/lib/game-sorter';
 import { getAdjacentDates, usDateToJstDisplayDate } from '@/lib/date-utils';
 
 export const revalidate = 3600;
