@@ -1,16 +1,14 @@
 import './globals.css';
-import Navigation from '@/components/Navigation';
 
 export const metadata = {
-  title: 'MLB Vault',
-  description: 'A modern web app for MLB game results and highlights.',
+  title: 'MLB Results',
+  description: 'MLB game results and highlights in Japanese time zone.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="ja">
       <body>
-        <Navigation />
         <main className="container mx-auto px-4 py-8">
           {children}
         </main>

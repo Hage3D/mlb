@@ -1,4 +1,6 @@
-export const MLBTeams: { [key: string]: { icon: string; abbreviation: string } } = {
+import { TeamData } from '@/types/mlb';
+
+export const MLBTeams: { [key: string]: TeamData } = {
   'Arizona Diamondbacks': { abbreviation: 'ARI', icon: 'https://www.mlbstatic.com/team-logos/109.svg' },
   'Atlanta Braves': { abbreviation: 'ATL', icon: 'https://www.mlbstatic.com/team-logos/144.svg' },
   'Baltimore Orioles': { abbreviation: 'BAL', icon: 'https://www.mlbstatic.com/team-logos/110.svg' },
@@ -31,7 +33,7 @@ export const MLBTeams: { [key: string]: { icon: string; abbreviation: string } }
   'Washington Nationals': { abbreviation: 'WSH', icon: 'https://www.mlbstatic.com/team-logos/120.svg' },
 };
 
-export function getTeamData(teamName: string) {
+export function getTeamData(teamName: string): TeamData | null {
   // Direct lookup first
   if (MLBTeams[teamName]) {
     return MLBTeams[teamName];

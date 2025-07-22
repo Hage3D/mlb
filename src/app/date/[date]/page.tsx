@@ -1,80 +1,23 @@
 import GameCard from '@/components/GameCard';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { getJapanesePlayersTeams } from '@/lib/japanese-players';
+import { getMlbDataForDate } from '@/lib/mlb-api';
+import { formatGameData, sortGames } from '@/lib/game-utils';
+import { getAdjacentDates, usDateToJstDisplayDate } from '@/lib/date-utils';
 
 export const revalidate = 3600;
-
-async function getMlbDataForDate(dateStr: string) {
-  const res = await fetch(`https://statsapi.mlb.com/api/v1/schedule/games/?sportId=1&date=${dateStr}`);
-  
-  if (!res.ok) {
-    throw new Error('Failed to fetch data from MLB API');
-  }
-
-  const data = await res.json();
-  return data.dates?.[0] || null;
-}
-
-interface MLBGame {
-  status: { detailedState: string };
-  teams: {
-    home: { team: { name: string }; score?: number };
-    away: { team: { name: string }; score?: number };
-  };
-  gameDate: string;
-}
-
-function formatGameData(game: MLBGame) {
-  const status = game.status.detailedState;
-  let gameStatus: 'live' | 'finished' | 'upcoming' = 'upcoming';
-  if (status === 'In Progress') gameStatus = 'live';
-  if (status === 'Final' || status === 'Game Over') gameStatus = 'finished';
-
-  // Convert game time to JST - the API already provides UTC time, so we just format for JST timezone
-  const gameDate = new Date(game.gameDate);
-  const timeString = gameDate.toLocaleTimeString('ja-JP', { 
-    timeZone: 'Asia/Tokyo',
-    hour: '2-digit', 
-    minute: '2-digit',
-    hour12: false 
-  });
-
-  return {
-    homeTeam: game.teams.home.team.name,
-    awayTeam: game.teams.away.team.name,
-    score: `${game.teams.away.score || 0} - ${game.teams.home.score || 0}`,
-    time: timeString,
-    status: gameStatus,
-    showYouTubeLink: gameStatus === 'finished',
-    gameDate: game.gameDate,
-  };
-}
-
-function getAdjacentDates(currentDate: string) {
-  const date = new Date(currentDate);
-  const prevDate = new Date(date);
-  const nextDate = new Date(date);
-  
-  prevDate.setDate(prevDate.getDate() - 1);
-  nextDate.setDate(nextDate.getDate() + 1);
-  
-  return {
-    prevDate: prevDate.toISOString().split('T')[0],
-    nextDate: nextDate.toISOString().split('T')[0]
-  };
-}
 
 export default async function DatePage({ params }: { params: Promise<{ date: string }> }) {
   const { date } = await params;
   const dateData = await getMlbDataForDate(date);
   const { prevDate, nextDate } = getAdjacentDates(date);
+  
+  // Get current Japanese players teams dynamically
+  const japaneseTeams = await getJapanesePlayersTeams();
 
   if (!dateData || !dateData.games || dateData.games.length === 0) {
-    // Still show navigation even if no games
-    // Convert US date to JST date for display (add 1 day for most evening games)
-    const usDateObj = new Date(date);
-    const jstDateObj = new Date(usDateObj.getTime() + (24 * 60 * 60 * 1000)); // Add 1 day for JST display
-    const dateString = `${jstDateObj.getFullYear()}.${String(jstDateObj.getMonth() + 1).padStart(2, '0')}.${String(jstDateObj.getDate()).padStart(2, '0')} ${jstDateObj.toLocaleDateString('en-US', { weekday: 'short' })}`;
+    const dateString = usDateToJstDisplayDate(date);
 
     return (
       <div className="space-y-6">
@@ -109,10 +52,8 @@ export default async function DatePage({ params }: { params: Promise<{ date: str
   }
 
   const formattedGames = dateData.games.map(formatGameData);
-  // Convert US date to JST date for display (add 1 day for most evening games)
-  const usDateObj = new Date(dateData.date);
-  const jstDateObj = new Date(usDateObj.getTime() + (24 * 60 * 60 * 1000)); // Add 1 day for JST display
-  const dateString = `${jstDateObj.getFullYear()}.${String(jstDateObj.getMonth() + 1).padStart(2, '0')}.${String(jstDateObj.getDate()).padStart(2, '0')} ${jstDateObj.toLocaleDateString('en-US', { weekday: 'short' })}`;
+  const sortedGames = sortGames(formattedGames, japaneseTeams);
+  const dateString = usDateToJstDisplayDate(dateData.date);
 
   return (
     <div className="space-y-6">
@@ -140,7 +81,7 @@ export default async function DatePage({ params }: { params: Promise<{ date: str
       </div>
       
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {formattedGames.map((game: any, index: number) => (
+        {sortedGames.map((game: any, index: number) => (
           <GameCard key={`${dateData.date}-${index}`} {...game} />
         ))}
       </div>

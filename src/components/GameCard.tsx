@@ -1,4 +1,5 @@
 import { getTeamData } from '@/lib/teams';
+import { GameStatus } from '@/types/mlb';
 import Image from 'next/image';
 
 interface GameCardProps {
@@ -6,7 +7,7 @@ interface GameCardProps {
   awayTeam: string;
   score: string;
   time?: string;
-  status: 'live' | 'finished' | 'upcoming';
+  status: GameStatus;
   showYouTubeLink?: boolean;
   gameDate?: string;
 }
@@ -25,15 +26,16 @@ export default function GameCard({ homeTeam, awayTeam, score, time, status, show
     const homeAbbr = homeTeamData?.abbreviation || homeTeam;
     const awayAbbr = awayTeamData?.abbreviation || awayTeam;
     
-    // Format date to American format (Month Day, Year) - use original game date from API (US time)
+    // Format date to American format (Month Day, Year) - use actual US game date for search
     let dateString = '';
     if (gameDate) {
       const date = new Date(gameDate);
+      // Use the actual game date (US time) for YouTube search, not the JST display date
       dateString = date.toLocaleDateString('en-US', { 
         month: 'long', 
         day: 'numeric', 
         year: 'numeric',
-        timeZone: 'America/New_York' // Use US Eastern time for consistent US date
+        timeZone: 'America/New_York' // Ensure we get the correct US date
       });
     }
     
