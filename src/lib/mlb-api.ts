@@ -10,8 +10,10 @@ const MLB_API_BASE = 'https://statsapi.mlb.com/api/v1';
  * Fetches MLB games for a specific date
  */
 export async function getMlbDataForDate(dateStr: string): Promise<MLBApiResponse['dates'][0] | null> {
-  const res = await fetch(`${MLB_API_BASE}/schedule/games/?sportId=1&date=${dateStr}`);
-  
+  const res = await fetch(
+    `${MLB_API_BASE}/schedule/games/?sportId=1&date=${dateStr}&hydrate=game(content(summary,media(epg))),linescore(runners),decisions,person,stats,team`
+  );
+
   if (!res.ok) {
     throw new Error('Failed to fetch data from MLB API');
   }
