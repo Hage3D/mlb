@@ -25,6 +25,7 @@ export function formatGameData(game: MLBGame): FormattedGame {
   const timeString = formatGameTimeToJst(game.gameDate);
 
   return {
+    gamePk: game.gamePk,
     homeTeam: game.teams.home.team.name,
     awayTeam: game.teams.away.team.name,
     score: `${game.teams.away.score || 0} - ${game.teams.home.score || 0}`,
