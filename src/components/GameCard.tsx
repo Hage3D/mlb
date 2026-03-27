@@ -1,8 +1,12 @@
+"use client";
+
 import { getTeamData } from '@/lib/teams';
 import { GameStatus } from '@/types/mlb';
 import Image from 'next/image';
+import { useState } from 'react';
 
 interface GameCardProps {
+  gamePk: number;
   homeTeam: string;
   awayTeam: string;
   score: string;
@@ -12,9 +16,37 @@ interface GameCardProps {
   gameDate?: string;
 }
 
-export default function GameCard({ homeTeam, awayTeam, score, time, status, showYouTubeLink = false, gameDate }: GameCardProps) {
+export default function GameCard({ gamePk, homeTeam, awayTeam, score, time, status, showYouTubeLink = false, gameDate }: GameCardProps) {
   const homeTeamData = getTeamData(homeTeam);
   const awayTeamData = getTeamData(awayTeam);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleWatchHighlights = async () => {
+    setIsModalOpen(true);
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/highlight/${gamePk}`);
+      if (!res.ok) {
+        throw new Error('Failed to fetch video');
+      }
+      const data = await res.json();
+      setVideoUrl(data.url);
+    } catch (err: any) {
+      setError(err.message || 'Error fetching video');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setVideoUrl(null);
+    setError(null);
+  };
 
   const statusInfo = {
     live: { text: 'Live', color: 'text-red-600' },
@@ -100,14 +132,68 @@ export default function GameCard({ homeTeam, awayTeam, score, time, status, show
       {/* YouTube Link */}
       {showYouTubeLink && status === 'finished' && (
         <div className="mt-6 text-center">
-          <a
-            href={`https://www.youtube.com/results?search_query=${encodeURIComponent(generateYouTubeQuery())}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block px-6 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+          <button
+            onClick={handleWatchHighlights}
+            className="inline-flex items-center justify-center px-6 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
           >
+            <svg
+              className="w-4 h-4 mr-2"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                clipRule="evenodd"
+              />
+            </svg>
             ハイライトを見る
-          </a>
+          </button>
+        </div>
+      )}
+
+      {/* Modal */}
+      {isModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 p-4"
+          onClick={closeModal}
+        >
+          <div
+            className="bg-white rounded-lg overflow-hidden shadow-xl w-full max-w-4xl relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center p-4 border-b">
+              <h3 className="text-lg font-semibold">{homeTeamData?.abbreviation || homeTeam} vs {awayTeamData?.abbreviation || awayTeam} - ハイライト</h3>
+              <button
+                onClick={closeModal}
+                className="text-gray-500 hover:text-gray-700 p-1"
+                aria-label="Close"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+            <div className="p-0 bg-black aspect-video flex items-center justify-center w-full">
+              {isLoading && (
+                <div className="text-white">読み込み中...</div>
+              )}
+              {error && (
+                <div className="text-red-500 bg-white p-4 rounded">{error}</div>
+              )}
+              {videoUrl && !isLoading && !error && (
+                <video
+                  src={videoUrl}
+                  controls
+                  autoPlay
+                  className="w-full h-full object-contain"
+                >
+                  お使いのブラウザは動画タグをサポートしていません。
+                </video>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

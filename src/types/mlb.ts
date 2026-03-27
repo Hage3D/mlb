@@ -1,4 +1,5 @@
 export interface MLBGame {
+  gamePk: number;
   status: { detailedState: string };
   teams: {
     home: { team: { name: string }; score?: number };
@@ -15,6 +16,7 @@ export interface MLBApiResponse {
 }
 
 export interface FormattedGame {
+  gamePk: number;
   homeTeam: string;
   awayTeam: string;
   score: string;
